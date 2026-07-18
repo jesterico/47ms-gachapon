@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>47MS — Gachapon Prize Pools</title>
+<link rel="icon" href="47logo.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: hsl(210, 64%, 4%);
+    --card: rgba(10, 15, 28, 0.6);
+    --panel: rgba(10, 15, 28, 0.75);
+    --border: rgba(255, 255, 255, 0.1);
+    --fg: hsl(160, 25%, 96%);
+    --muted: hsl(200, 12%, 63%);
+    --neon: #39ff7a;
+    --radius: 0.75rem;
+    --c-common: #a9b6c0;
+    --c-uncommon: #39ff7a;
+    --c-rare: #ffc229;
+    --c-achievement: #eb9ebd;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: 'Assistant', system-ui, sans-serif;
+    min-height: 100dvh;
+    background-image:
+      radial-gradient(ellipse 900px 500px at 15% -10%, rgba(57, 255, 122, 0.07), transparent),
+      radial-gradient(ellipse 900px 500px at 90% 0%, rgba(80, 190, 240, 0.05), transparent);
+    background-attachment: fixed;
+  }
+
+  .container { max-width: 1360px; margin: 0 auto; padding: 0 1.25rem; }
+
+  /* ============ header ============ */
+  header {
+    padding: 2rem 0 1rem;
+  }
+  .header-row { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+  .header-row img.logo { width: 56px; height: 50px; filter: drop-shadow(0 0 12px rgba(57,255,122,.35)); }
+  h1 { font-size: 1.7rem; font-weight: 800; margin: 0; letter-spacing: 0.01em; }
+  h1 .accent { color: var(--neon); text-shadow: 0 0 18px rgba(57,255,122,.45); }
+  .subtitle { color: var(--muted); margin: 0.15rem 0 0; font-size: 0.95rem; }
+
+  /* ============ tabs (chairs / mounts) ============ */
+  .header-actions {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 1rem; flex-wrap: wrap;
+    margin-top: 1.25rem;
+  }
+  .pool-tabs {
+    display: inline-flex;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 4px;
+    gap: 4px;
+    backdrop-filter: blur(12px);
+  }
+  .pool-tab {
+    appearance: none; border: 0; cursor: pointer;
+    font-family: inherit; font-size: 1rem; font-weight: 700;
+    color: var(--muted);
+    background: transparent;
+    padding: 0.55rem 1.4rem;
+    border-radius: calc(var(--radius) - 4px);
+    display: flex; align-items: center; gap: 0.5rem;
+    transition: all .2s ease;
+  }
+  .pool-tab:hover { color: var(--fg); }
+  .pool-tab.active {
+    background: rgba(57, 255, 122, 0.14);
+    color: var(--neon);
+    box-shadow: inset 0 0 0 1px rgba(57, 255, 122, 0.35);
+  }
+  .pool-tab .count {
+    font-family: var(--mono); font-size: 0.72rem; font-weight: 400;
+    background: rgba(255,255,255,0.07); border: 1px solid var(--border);
+    padding: 1px 7px; border-radius: 6px; color: var(--muted);
+  }
+  .pool-tab.active .count { color: var(--neon); border-color: rgba(57,255,122,.3); background: rgba(57,255,122,.08); }
+
+  /* ============ toolbar ============ */
+  .toolbar {
+    position: sticky; top: 0; z-index: 40;
+    background: var(--panel);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.75rem;
+    margin: 1rem 0;
+    display: flex; flex-wrap: nowrap; align-items: center; gap: 0.6rem;
+  }
+  .search-wrap { position: relative; flex: 1 1 240px; min-width: 200px; }
+  .search-wrap svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--muted); pointer-events: none; }
+  #search {
+    width: 100%;
+    height: 38px;
+    font-family: inherit; font-size: 0.95rem;
+    color: var(--fg);
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: calc(var(--radius) - 2px);
+    padding: 0 2.2rem 0 2.3rem;
+    outline: none;
+    transition: border-color .2s;
+  }
+  #search::placeholder { color: var(--muted); }
+  #search:focus { border-color: rgba(57, 255, 122, 0.45); box-shadow: 0 0 0 3px rgba(57,255,122,.08); }
+  #clear-search {
+    position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+    border: 0; background: transparent; color: var(--muted); cursor: pointer;
+    font-size: 1rem; padding: 4px 8px; border-radius: 6px; display: none;
+  }
+  #clear-search:hover { color: var(--fg); background: rgba(255,255,255,.06); }
+
+  .chips { display: flex; flex-wrap: nowrap; gap: 0.4rem; }
+  .chip {
+    appearance: none; cursor: pointer;
+    height: 38px;
+    font-family: inherit; font-size: 0.82rem; font-weight: 700;
+    background: rgba(255,255,255,0.04);
+    color: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0 0.8rem;
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    transition: all .15s ease;
+    white-space: nowrap;
+  }
+  .chip:hover { color: var(--fg); border-color: rgba(255,255,255,.25); }
+  .chip .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--chip-color, var(--muted)); box-shadow: 0 0 6px var(--chip-color, transparent); }
+  .chip .n { font-family: var(--mono); font-size: 0.7rem; font-weight: 400; opacity: 0.75; }
+  .chip.active {
+    color: var(--chip-color, var(--fg));
+    border-color: var(--chip-color, var(--fg));
+    background: color-mix(in srgb, var(--chip-color, #fff) 12%, transparent);
+  }
+
+  .sort-dd { position: relative; }
+  .sort-dd-btn {
+    appearance: none; cursor: pointer;
+    height: 38px;
+    display: inline-flex; align-items: center; gap: 0.45rem;
+    font-family: inherit; font-size: 0.82rem; font-weight: 700;
+    color: var(--fg);
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0 0.7rem;
+    transition: all .15s ease;
+    white-space: nowrap;
+  }
+  .sort-dd-btn:hover { border-color: rgba(255,255,255,.25); }
+  .sort-dd.open .sort-dd-btn { border-color: rgba(57, 255, 122, 0.45); }
+  .sort-dd-btn .label {
+    font-family: var(--mono); font-size: 0.68rem; color: var(--muted);
+    letter-spacing: 0.05em; text-transform: uppercase;
+  }
+  .sort-dd-btn .chev { font-size: 0.6rem; color: var(--muted); transition: transform .15s; }
+  .sort-dd.open .chev { transform: rotate(180deg); }
+  .sort-dd-menu {
+    position: absolute; top: calc(100% + 6px); right: 0; z-index: 60;
+    display: none; flex-direction: column; gap: 2px;
+    min-width: 130px;
+    background: hsl(208, 40%, 6%);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 4px;
+    box-shadow: 0 12px 40px -12px rgba(0,0,0,.8);
+  }
+  .sort-dd.open .sort-dd-menu { display: flex; }
+  .sort-dd-item {
+    appearance: none; cursor: pointer; text-align: left;
+    font-family: inherit; font-size: 0.85rem; font-weight: 600;
+    color: var(--muted); background: transparent;
+    border: 0; border-radius: 7px;
+    padding: 0.42rem 0.7rem;
+    display: flex; align-items: center; justify-content: space-between; gap: 0.6rem;
+    transition: all .12s ease;
+  }
+  .sort-dd-item:hover { color: var(--fg); background: rgba(255,255,255,.06); }
+  .sort-dd-item.active { color: var(--neon); background: rgba(57, 255, 122, 0.1); }
+  .sort-dd-item.active::after { content: '✓'; font-size: 0.75rem; }
+
+  .toolbar-right { display: flex; align-items: center; gap: 0.6rem; margin-left: auto; }
+  #lucky, #lb-lucky {
+    appearance: none; cursor: pointer;
+    font-family: inherit; font-size: 0.85rem; font-weight: 700;
+    color: var(--neon);
+    background: rgba(57, 255, 122, 0.1);
+    border: 1px solid rgba(57, 255, 122, 0.35);
+    border-radius: calc(var(--radius) - 2px);
+    padding: 0.5rem 1rem;
+    display: inline-flex; align-items: center; gap: 0.45rem;
+    transition: all .15s ease;
+    white-space: nowrap;
+  }
+  #lucky:hover, #lb-lucky:hover { background: rgba(57, 255, 122, 0.2); box-shadow: 0 0 18px rgba(57,255,122,.25); }
+  #lucky:active, #lb-lucky:active { transform: scale(0.97); }
+  #lucky img, #lb-lucky img { height: 24px; width: auto; image-rendering: pixelated; }
+  #lb-lucky { margin-top: 0.8rem; width: 100%; justify-content: center; }
+
+  /* ============ grid ============ */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    gap: 0.8rem;
+    padding-bottom: 4rem;
+  }
+  .item-card {
+    content-visibility: auto;
+    contain-intrinsic-size: 230px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    cursor: pointer;
+    display: flex; flex-direction: column;
+    transition: border-color .2s ease, transform .15s ease, box-shadow .2s ease;
+  }
+  .item-card:hover {
+    border-color: color-mix(in srgb, var(--rc) 45%, transparent);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 22px -8px color-mix(in srgb, var(--rc) 35%, transparent);
+  }
+  .item-card:focus-visible { outline: 2px solid var(--neon); outline-offset: 2px; }
+
+  .thumb {
+    height: 130px;
+    display: flex; align-items: center; justify-content: center;
+    background:
+      radial-gradient(ellipse 90% 70% at 50% 100%, color-mix(in srgb, var(--rc) 9%, transparent), transparent),
+      rgba(255, 255, 255, 0.02);
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    padding: 10px;
+  }
+  .thumb img.art { max-width: 100%; max-height: 110px; object-fit: contain; image-rendering: auto; }
+  .thumb img.mini-icon {
+    position: absolute; top: 6px; left: 6px;
+    width: 26px; height: 26px; object-fit: contain;
+    background: rgba(0,0,0,.35); border: 1px solid var(--border); border-radius: 6px; padding: 2px;
+  }
+  .thumb .no-img { color: var(--muted); font-size: 0.75rem; font-family: var(--mono); }
+
+  .card-body { padding: 0.55rem 0.65rem 0.6rem; display: flex; flex-direction: column; gap: 0.3rem; flex: 1; }
+  .item-name {
+    font-size: 0.86rem; font-weight: 700; line-height: 1.25; margin: 0;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    min-height: 2.15em;
+  }
+  .card-foot { display: flex; align-items: center; justify-content: space-between; gap: 0.4rem; margin-top: auto; }
+  .item-id { font-family: var(--mono); font-size: 0.68rem; color: var(--muted); }
+  .rarity-badge {
+    font-size: 0.66rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase;
+    font-family: var(--mono);
+    color: var(--rc);
+    background: color-mix(in srgb, var(--rc) 13%, transparent);
+    border: 1px solid color-mix(in srgb, var(--rc) 35%, transparent);
+    padding: 1px 7px; border-radius: 999px;
+    white-space: nowrap;
+  }
+
+  /* ============ empty state ============ */
+  #empty {
+    display: none;
+    text-align: center; padding: 4rem 1rem; color: var(--muted);
+    background: var(--card); border: 1px dashed var(--border); border-radius: var(--radius);
+    margin-bottom: 4rem;
+  }
+  #empty b { color: var(--fg); }
+  #empty button {
+    margin-top: 1rem; appearance: none; cursor: pointer;
+    font-family: inherit; font-weight: 700; font-size: 0.9rem;
+    color: var(--neon); background: rgba(57,255,122,.1);
+    border: 1px solid rgba(57,255,122,.35); border-radius: 8px; padding: 0.5rem 1.2rem;
+  }
+
+  /* ============ lightbox ============ */
+  #lightbox {
+    position: fixed; inset: 0; z-index: 100;
+    display: none; align-items: center; justify-content: center;
+    background: rgba(2, 6, 12, 0.8);
+    backdrop-filter: blur(6px);
+    padding: 1rem;
+  }
+  #lightbox.open { display: flex; }
+  .lb-card {
+    width: min(520px, 100%);
+    background: hsl(208, 36%, 7%);
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    overflow: hidden;
+    box-shadow: 0 20px 80px -20px rgba(0,0,0,.9), 0 0 40px -20px color-mix(in srgb, var(--rc) 40%, transparent);
+    animation: pop .18s ease-out;
+  }
+  @keyframes pop { from { transform: scale(.96); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .lb-stage {
+    position: relative;
+    min-height: 240px; max-height: 46dvh;
+    display: flex; align-items: flex-end; justify-content: center;
+    background:
+      radial-gradient(ellipse 100% 80% at 50% 110%, color-mix(in srgb, var(--rc) 14%, transparent), transparent),
+      linear-gradient(to bottom, rgba(255,255,255,.03), transparent);
+    padding: 2rem 1.5rem 26px;
+  }
+  .lb-stage::after {
+    content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 26px;
+    background-image: url('grass.png');
+    background-size: auto 52px; background-position: bottom center; background-repeat: repeat-x;
+    opacity: .9; pointer-events: none;
+  }
+  .lb-stage img.art { max-width: 100%; max-height: calc(46dvh - 4rem); min-height: 0; object-fit: contain; position: relative; z-index: 1; filter: drop-shadow(0 8px 14px rgba(0,0,0,.5)); }
+  .lb-nav {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    z-index: 2; appearance: none; cursor: pointer;
+    width: 36px; height: 36px; border-radius: 50%;
+    border: 1px solid var(--border); background: rgba(10,15,28,.7); color: var(--fg);
+    font-size: 1rem; display: flex; align-items: center; justify-content: center;
+    transition: all .15s;
+  }
+  .lb-nav:hover { border-color: var(--neon); color: var(--neon); }
+  #lb-prev { left: 10px; }
+  #lb-next { right: 10px; }
+  #lb-close {
+    position: absolute; top: 10px; right: 10px; z-index: 2;
+    appearance: none; cursor: pointer;
+    width: 32px; height: 32px; border-radius: 50%;
+    border: 1px solid var(--border); background: rgba(10,15,28,.7); color: var(--muted);
+    font-size: 0.95rem;
+  }
+  #lb-close:hover { color: var(--fg); border-color: rgba(255,255,255,.3); }
+  .lb-info { padding: 1rem 1.25rem 1.25rem; border-top: 1px solid var(--border); }
+  .lb-title-row { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+  .lb-info h2 { margin: 0; font-size: 1.15rem; font-weight: 800; }
+  .lb-info img.mini-icon { width: 30px; height: 30px; object-fit: contain; background: rgba(0,0,0,.35); border: 1px solid var(--border); border-radius: 6px; padding: 2px; }
+  .lb-meta { display: flex; align-items: center; gap: 0.6rem; margin-top: 0.55rem; flex-wrap: wrap; }
+  #lb-id {
+    appearance: none; cursor: pointer;
+    font-family: var(--mono); font-size: 0.75rem; color: var(--muted);
+    background: rgba(255,255,255,.05); border: 1px solid var(--border); border-radius: 6px;
+    padding: 3px 9px;
+    transition: all .15s;
+  }
+  #lb-id:hover { color: var(--fg); border-color: rgba(255,255,255,.3); }
+  #lb-condition {
+    margin: 0.7rem 0 0; font-size: 0.85rem; color: var(--c-achievement);
+    background: color-mix(in srgb, var(--c-achievement) 8%, transparent);
+    border: 1px solid color-mix(in srgb, var(--c-achievement) 25%, transparent);
+    border-radius: 8px; padding: 0.45rem 0.7rem;
+    display: none;
+  }
+
+  footer {
+    text-align: center; color: var(--muted); font-size: 0.78rem; font-family: var(--mono);
+    padding: 1.5rem 0 2.5rem;
+  }
+
+  @media (max-width: 900px) {
+    .toolbar { flex-wrap: wrap; }
+    .chips { flex-wrap: wrap; }
+  }
+  @media (max-width: 640px) {
+    .grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 0.55rem; }
+    .thumb { height: 105px; }
+    .thumb img.art { max-height: 88px; }
+    h1 { font-size: 1.35rem; }
+    .toolbar-right { margin-left: 0; width: 100%; justify-content: space-between; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div class="header-row">
+      <img class="logo" src="47logo.svg" alt="47MS logo">
+      <div>
+        <h1>Gachapon <span class="accent">Prize Pools</span></h1>
+        <p class="subtitle">Every chair &amp; mount you can pull, sorted by rarity</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <div class="pool-tabs" role="tablist" id="pool-tabs"></div>
+      <button id="lucky" title="Simulate a pull at real rates: 75% Common / 22% Uncommon / 3% Rare"><img id="lucky-icon" src="chairGacha.png" alt=""> Random pull</button>
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <div class="search-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      <input id="search" type="search" placeholder="Search by name or ID…" autocomplete="off">
+      <button id="clear-search" title="Clear search">✕</button>
+    </div>
+    <div class="chips" id="chips"></div>
+    <div class="toolbar-right">
+      <div class="sort-dd" id="sort-dd">
+        <button class="sort-dd-btn" id="sort-dd-btn" aria-haspopup="listbox">
+          <span class="label">Sort</span>
+          <span id="sort-current">ID</span>
+          <span class="chev">▼</span>
+        </button>
+        <div class="sort-dd-menu" role="listbox">
+          <button class="sort-dd-item active" data-sort="id" role="option">ID</button>
+          <button class="sort-dd-item" data-sort="name" role="option">Name</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid" id="grid"></div>
+  <div id="empty">
+    <div style="font-size:2rem">🍄</div>
+    <p>No items match <b id="empty-term"></b></p>
+    <button id="empty-clear">Clear filters</button>
+  </div>
+
+  <footer>47MS &middot; gachapon rarity reference</footer>
+</div>
+
+<div id="lightbox" role="dialog" aria-modal="true">
+  <div class="lb-card">
+    <div class="lb-stage">
+      <button class="lb-nav" id="lb-prev" title="Previous (←)">←</button>
+      <img class="art" id="lb-img" alt="">
+      <button class="lb-nav" id="lb-next" title="Next (→)">→</button>
+      <button id="lb-close" title="Close (Esc)">✕</button>
+    </div>
+    <div class="lb-info">
+      <div class="lb-title-row">
+        <img class="mini-icon" id="lb-icon" alt="" style="display:none">
+        <h2 id="lb-name"></h2>
+        <span class="rarity-badge" id="lb-rarity"></span>
+      </div>
+      <div class="lb-meta">
+        <button id="lb-id" title="Click to copy ID"></button>
+      </div>
+      <p id="lb-condition"></p>
+      <button id="lb-lucky" style="display:none" title="Simulate a pull at real rates: 75% Common / 22% Uncommon / 3% Rare"><img id="lb-lucky-icon" src="chairGacha.png" alt=""> Pull again</button>
+    </div>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script>
+(() => {
+  const RARITY_COLORS = {
+    Common: 'var(--c-common)',
+    Uncommon: 'var(--c-uncommon)',
+    Rare: 'var(--c-rare)',
+    Achievement: 'var(--c-achievement)',
+  };
+  const RARITY_ORDER = { Common: 0, Uncommon: 1, Rare: 2, Achievement: 3 };
+
+  // ---- flatten spreadsheet sheets into pools ----
+  function buildPool(sheets, tierSheets, extra) {
+    const items = [];
+    for (const tier of tierSheets) {
+      for (const it of (sheets[tier] || [])) {
+        items.push({ ...it, rarity: it.rarity || tier });
+      }
+    }
+    if (extra) extra(items, sheets);
+    return items;
+  }
+
+  const chairs = buildPool(GACHA_DATA.chairs, ['Common', 'Uncommon', 'Rare'], (items, sheets) => {
+    for (const it of (sheets['Achievements Chairs'] || [])) {
+      items.push({ ...it, rarity: 'Achievement' });
+    }
+  });
+  const mounts = buildPool(GACHA_DATA.mounts, ['Common', 'Uncommon', 'Rare']);
+
+  const POOLS = {
+    chairs: { label: 'Chairs', emoji: '🪑', items: chairs },
+    mounts: { label: 'Mounts', emoji: '🐉', items: mounts },
+  };
+
+  // ---- state ----
+  let pool = 'chairs';
+  let rarity = 'All';
+  let sortBy = 'id';
+  let query = '';
+  let visible = []; // currently rendered items, for lightbox navigation
+  let lbIndex = -1;
+
+  const $ = (id) => document.getElementById(id);
+  const grid = $('grid');
+
+  // ---- pool tabs ----
+  const tabsEl = $('pool-tabs');
+  for (const key of Object.keys(POOLS)) {
+    const p = POOLS[key];
+    const btn = document.createElement('button');
+    btn.className = 'pool-tab';
+    btn.setAttribute('role', 'tab');
+    btn.innerHTML = `<span>${p.emoji} ${p.label}</span><span class="count">${p.items.length.toLocaleString()}</span>`;
+    btn.addEventListener('click', () => { pool = key; rarity = 'All'; renderChips(); render(); syncTabs(); });
+    btn.dataset.pool = key;
+    tabsEl.appendChild(btn);
+  }
+  function syncTabs() {
+    for (const b of tabsEl.children) b.classList.toggle('active', b.dataset.pool === pool);
+    const machine = pool === 'mounts' ? 'mountGacha.png' : 'chairGacha.png';
+    $('lucky-icon').src = machine;
+    $('lb-lucky-icon').src = machine;
+  }
+
+  // ---- rarity chips ----
+  function renderChips() {
+    const items = POOLS[pool].items;
+    const counts = {};
+    for (const it of items) counts[it.rarity] = (counts[it.rarity] || 0) + 1;
+    const tiers = ['All', 'Common', 'Uncommon', 'Rare'];
+    if (counts.Achievement) tiers.push('Achievement');
+    if (!tiers.includes(rarity)) rarity = 'All';
+
+    const chipsEl = $('chips');
+    chipsEl.innerHTML = '';
+    for (const tier of tiers) {
+      const n = tier === 'All' ? items.length : (counts[tier] || 0);
+      const chip = document.createElement('button');
+      chip.className = 'chip' + (tier === rarity ? ' active' : '');
+      if (RARITY_COLORS[tier]) chip.style.setProperty('--chip-color', RARITY_COLORS[tier]);
+      chip.innerHTML = (tier === 'All' ? '' : '<span class="dot"></span>') + `${tier} <span class="n">${n.toLocaleString()}</span>`;
+      chip.addEventListener('click', () => { rarity = tier; renderChips(); render(); });
+      chipsEl.appendChild(chip);
+    }
+  }
+
+  // ---- grid render ----
+  function matches(it) {
+    if (rarity !== 'All' && it.rarity !== rarity) return false;
+    if (query) {
+      const q = query.toLowerCase();
+      if (!(it.name || '').toLowerCase().includes(q) && !String(it.id).includes(q)) return false;
+    }
+    return true;
+  }
+
+  const SORTERS = {
+    name: (a, b) => (a.name || '').localeCompare(b.name || '') || cmp(idKey(a), idKey(b)),
+    id: (a, b) => cmp(idKey(a), idKey(b)),
+  };
+  function idKey(it) { return (it.id === '' || it.id == null) ? Infinity : it.id; }
+  function cmp(a, b) { return a > b ? 1 : a < b ? -1 : 0; }
+
+  function render() {
+    const items = POOLS[pool].items.filter(matches).sort(SORTERS[sortBy]);
+    visible = items;
+    grid.innerHTML = '';
+    const frag = document.createDocumentFragment();
+    items.forEach((it, i) => {
+      const card = document.createElement('div');
+      card.className = 'item-card';
+      card.tabIndex = 0;
+      card.style.setProperty('--rc', RARITY_COLORS[it.rarity] || 'var(--c-common)');
+      card.innerHTML = `
+        <div class="thumb">
+          ${it.icon ? `<img class="mini-icon" src="${it.icon}" alt="" loading="lazy">` : ''}
+          ${it.img ? `<img class="art" src="${it.img}" alt="" loading="lazy">` : '<span class="no-img">no image yet</span>'}
+        </div>
+        <div class="card-body">
+          <p class="item-name">${escapeHtml(it.name || '(unnamed)')}</p>
+          <div class="card-foot">
+            <span class="item-id">${it.id || '—'}</span>
+            <span class="rarity-badge">${it.rarity}</span>
+          </div>
+        </div>`;
+      card.addEventListener('click', () => openLightbox(i));
+      card.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openLightbox(i); } });
+      frag.appendChild(card);
+    });
+    grid.appendChild(frag);
+
+    const empty = $('empty');
+    empty.style.display = items.length ? 'none' : 'block';
+    grid.style.display = items.length ? 'grid' : 'none';
+    if (!items.length) $('empty-term').textContent = query ? `"${query}"` : 'the current filters';
+  }
+
+  function escapeHtml(s) {
+    return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  // ---- search ----
+  const searchEl = $('search');
+  let debounce;
+  searchEl.addEventListener('input', () => {
+    clearTimeout(debounce);
+    debounce = setTimeout(() => {
+      query = searchEl.value.trim();
+      $('clear-search').style.display = query ? 'block' : 'none';
+      render();
+    }, 120);
+  });
+  $('clear-search').addEventListener('click', () => {
+    searchEl.value = ''; query = '';
+    $('clear-search').style.display = 'none';
+    render(); searchEl.focus();
+  });
+  $('empty-clear').addEventListener('click', () => {
+    searchEl.value = ''; query = ''; rarity = 'All';
+    $('clear-search').style.display = 'none';
+    renderChips(); render();
+  });
+
+  // ---- sorting dropdown ----
+  const sortDd = $('sort-dd');
+  const sortItems = [...document.querySelectorAll('.sort-dd-item')];
+  $('sort-dd-btn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    sortDd.classList.toggle('open');
+  });
+  for (const it of sortItems) {
+    it.addEventListener('click', () => {
+      sortBy = it.dataset.sort;
+      $('sort-current').textContent = it.textContent;
+      for (const o of sortItems) o.classList.toggle('active', o === it);
+      sortDd.classList.remove('open');
+      render();
+    });
+  }
+  document.addEventListener('click', (e) => {
+    if (!sortDd.contains(e.target)) sortDd.classList.remove('open');
+  });
+
+  // ---- random pull (real gacha rates: 75% Common / 22% Uncommon / 3% Rare) ----
+  function doRandomPull() {
+    const roll = Math.random() * 100;
+    const tier = roll < 3 ? 'Rare' : roll < 25 ? 'Uncommon' : 'Common';
+    const candidates = POOLS[pool].items.filter((it) => it.rarity === tier);
+    if (!candidates.length) return;
+    fromRandom = true;
+    openLightboxItem(candidates[Math.floor(Math.random() * candidates.length)]);
+  }
+  $('lucky').addEventListener('click', doRandomPull);
+  $('lb-lucky').addEventListener('click', doRandomPull);
+
+  // ---- lightbox ----
+  const lb = $('lightbox');
+  let fromRandom = false;
+  function openLightbox(i) {
+    if (visible[i]) { fromRandom = false; openLightboxItem(visible[i]); }
+  }
+  function openLightboxItem(it) {
+    lbIndex = visible.indexOf(it);
+    $('lb-lucky').style.display = fromRandom ? 'inline-flex' : 'none';
+    const rc = RARITY_COLORS[it.rarity] || 'var(--c-common)';
+    lb.querySelector('.lb-card').style.setProperty('--rc', rc);
+    $('lb-img').src = it.img || '';
+    $('lb-img').style.display = it.img ? '' : 'none';
+    $('lb-name').textContent = it.name || '(unnamed)';
+    const badge = $('lb-rarity');
+    badge.textContent = it.rarity;
+    badge.style.setProperty('--rc', rc);
+    const idBtn = $('lb-id');
+    idBtn.textContent = it.id ? 'ID ' + it.id : 'ID —';
+    idBtn.onclick = () => {
+      navigator.clipboard?.writeText(String(it.id)).then(() => {
+        idBtn.textContent = '✓ copied';
+        setTimeout(() => { idBtn.textContent = 'ID ' + it.id; }, 900);
+      });
+    };
+    const icon = $('lb-icon');
+    if (it.icon) { icon.src = it.icon; icon.style.display = ''; } else { icon.style.display = 'none'; }
+    const cond = $('lb-condition');
+    if (it.condition) { cond.textContent = '🏆 ' + it.condition; cond.style.display = 'block'; }
+    else { cond.style.display = 'none'; }
+    lb.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeLightbox() {
+    lb.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+  function step(d) {
+    if (!visible.length) return;
+    openLightbox((lbIndex + d + visible.length) % visible.length);
+  }
+  $('lb-close').addEventListener('click', closeLightbox);
+  $('lb-prev').addEventListener('click', () => step(-1));
+  $('lb-next').addEventListener('click', () => step(1));
+  lb.addEventListener('click', (e) => { if (e.target === lb) closeLightbox(); });
+  document.addEventListener('keydown', (e) => {
+    if (!lb.classList.contains('open')) return;
+    if (e.key === 'Escape') closeLightbox();
+    else if (e.key === 'ArrowLeft') step(-1);
+    else if (e.key === 'ArrowRight') step(1);
+  });
+
+  // ---- init ----
+  // sort each pool: rarity tier then ID
+  for (const key of Object.keys(POOLS)) {
+    POOLS[key].items.sort((a, b) =>
+      (RARITY_ORDER[a.rarity] ?? 9) - (RARITY_ORDER[b.rarity] ?? 9) || (a.id > b.id ? 1 : -1));
+  }
+  syncTabs();
+  renderChips();
+  render();
+})();
+</script>
+</body>
+</html>
