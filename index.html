@@ -21,6 +21,7 @@
     --c-uncommon: #39ff7a;
     --c-rare: #ffc229;
     --c-achievement: #eb9ebd;
+    --c-upgradable: #5cc8ff;
     --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   }
 
@@ -458,8 +459,14 @@
     Uncommon: 'var(--c-uncommon)',
     Rare: 'var(--c-rare)',
     Achievement: 'var(--c-achievement)',
+    Upgradable: 'var(--c-upgradable)',
   };
   const RARITY_ORDER = { Common: 0, Uncommon: 1, Rare: 2, Achievement: 3 };
+
+  // An item may carry a `label` that overrides the badge text without moving it
+  // out of its rarity tier — e.g. a Common that can be upgraded.
+  function badgeOf(it) { return it.label || it.rarity; }
+  function colorOf(it) { return RARITY_COLORS[badgeOf(it)] || RARITY_COLORS[it.rarity] || 'var(--c-common)'; }
 
   // ---- flatten spreadsheet sheets into pools ----
   function buildPool(sheets, tierSheets, extra) {
@@ -563,7 +570,7 @@
       const card = document.createElement('div');
       card.className = 'item-card';
       card.tabIndex = 0;
-      card.style.setProperty('--rc', RARITY_COLORS[it.rarity] || 'var(--c-common)');
+      card.style.setProperty('--rc', colorOf(it));
       card.innerHTML = `
         <div class="thumb">
           ${it.icon ? `<img class="mini-icon" src="${it.icon}" alt="" loading="lazy">` : ''}
@@ -573,7 +580,7 @@
           <p class="item-name">${escapeHtml(it.name || '(unnamed)')}</p>
           <div class="card-foot">
             <span class="item-id">${it.id || '—'}</span>
-            <span class="rarity-badge">${it.rarity}</span>
+            <span class="rarity-badge">${badgeOf(it)}</span>
           </div>
         </div>`;
       card.addEventListener('click', () => openLightbox(i));
@@ -655,13 +662,13 @@
   function openLightboxItem(it) {
     lbIndex = visible.indexOf(it);
     $('lb-lucky').style.display = fromRandom ? 'inline-flex' : 'none';
-    const rc = RARITY_COLORS[it.rarity] || 'var(--c-common)';
+    const rc = colorOf(it);
     lb.querySelector('.lb-card').style.setProperty('--rc', rc);
     $('lb-img').src = it.img || '';
     $('lb-img').style.display = it.img ? '' : 'none';
     $('lb-name').textContent = it.name || '(unnamed)';
     const badge = $('lb-rarity');
-    badge.textContent = it.rarity;
+    badge.textContent = badgeOf(it);
     badge.style.setProperty('--rc', rc);
     const idBtn = $('lb-id');
     idBtn.textContent = it.id ? 'ID ' + it.id : 'ID —';
