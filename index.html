@@ -259,6 +259,9 @@
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
     min-height: 2.15em;
   }
+  .name-row { display: flex; align-items: center; gap: 0.45rem; }
+  .name-row .item-name { flex: 1; min-width: 0; }
+  .name-icon { width: 30px; height: 30px; object-fit: contain; flex-shrink: 0; }
   .card-foot { display: flex; align-items: center; justify-content: space-between; gap: 0.4rem; margin-top: auto; }
   .item-id { font-family: var(--mono); font-size: 0.68rem; color: var(--muted); }
   .rarity-badge {
@@ -488,7 +491,7 @@
   const mounts = buildPool(GACHA_DATA.mounts, ['Common', 'Uncommon', 'Rare']);
 
   const POOLS = {
-    chairs: { label: 'Chairs', emoji: '🪑', items: chairs },
+    chairs: { label: 'Chairs', emoji: '🪑', items: chairs, iconBesideName: true },
     mounts: { label: 'Mounts', emoji: '🐉', items: mounts },
   };
 
@@ -563,6 +566,7 @@
 
   function render() {
     const items = POOLS[pool].items.filter(matches).sort(SORTERS[sortBy]);
+    const besideName = POOLS[pool].iconBesideName;
     visible = items;
     grid.innerHTML = '';
     const frag = document.createDocumentFragment();
@@ -573,11 +577,14 @@
       card.style.setProperty('--rc', colorOf(it));
       card.innerHTML = `
         <div class="thumb">
-          ${it.icon ? `<img class="mini-icon" src="${it.icon}" alt="" loading="lazy">` : ''}
+          ${it.icon && !besideName ? `<img class="mini-icon" src="${it.icon}" alt="" loading="lazy">` : ''}
           ${it.img ? `<img class="art" src="${it.img}" alt="" loading="lazy">` : '<span class="no-img">no image yet</span>'}
         </div>
         <div class="card-body">
-          <p class="item-name">${escapeHtml(it.name || '(unnamed)')}</p>
+          <div class="name-row">
+            ${it.icon && besideName ? `<img class="name-icon" src="${it.icon}" alt="" loading="lazy">` : ''}
+            <p class="item-name">${escapeHtml(it.name || '(unnamed)')}</p>
+          </div>
           <div class="card-foot">
             <span class="item-id">${it.id || '—'}</span>
             <span class="rarity-badge">${badgeOf(it)}</span>
