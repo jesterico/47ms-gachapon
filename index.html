@@ -246,11 +246,6 @@
     padding: 10px;
   }
   .thumb img.art { max-width: 100%; max-height: 110px; object-fit: contain; image-rendering: auto; }
-  .thumb img.mini-icon {
-    position: absolute; top: 6px; left: 6px;
-    width: 26px; height: 26px; object-fit: contain;
-    background: rgba(0,0,0,.35); border: 1px solid var(--border); border-radius: 6px; padding: 2px;
-  }
   .thumb .no-img { color: var(--muted); font-size: 0.75rem; font-family: var(--mono); }
 
   .card-body { padding: 0.55rem 0.65rem 0.6rem; display: flex; flex-direction: column; gap: 0.3rem; flex: 1; }
@@ -261,7 +256,7 @@
   }
   .name-row { display: flex; align-items: center; gap: 0.45rem; }
   .name-row .item-name { flex: 1; min-width: 0; }
-  .name-icon { width: 30px; height: 30px; object-fit: contain; flex-shrink: 0; }
+  .name-icon { flex-shrink: 0; }
   .card-foot { display: flex; align-items: center; justify-content: space-between; gap: 0.4rem; margin-top: auto; }
   .item-id { font-family: var(--mono); font-size: 0.68rem; color: var(--muted); }
   .rarity-badge {
@@ -346,7 +341,7 @@
   .lb-info { padding: 1rem 1.25rem 1.25rem; border-top: 1px solid var(--border); }
   .lb-title-row { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
   .lb-info h2 { margin: 0; font-size: 1.15rem; font-weight: 800; }
-  .lb-info img.mini-icon { width: 30px; height: 30px; object-fit: contain; background: rgba(0,0,0,.35); border: 1px solid var(--border); border-radius: 6px; padding: 2px; }
+  .lb-info img.mini-icon { flex-shrink: 0; }
   .lb-meta { display: flex; align-items: center; gap: 0.6rem; margin-top: 0.55rem; flex-wrap: wrap; }
   #lb-id {
     appearance: none; cursor: pointer;
@@ -491,7 +486,7 @@
   const mounts = buildPool(GACHA_DATA.mounts, ['Common', 'Uncommon', 'Rare']);
 
   const POOLS = {
-    chairs: { label: 'Chairs', emoji: '🪑', items: chairs, iconBesideName: true },
+    chairs: { label: 'Chairs', emoji: '🪑', items: chairs },
     mounts: { label: 'Mounts', emoji: '🐉', items: mounts },
   };
 
@@ -566,7 +561,6 @@
 
   function render() {
     const items = POOLS[pool].items.filter(matches).sort(SORTERS[sortBy]);
-    const besideName = POOLS[pool].iconBesideName;
     visible = items;
     grid.innerHTML = '';
     const frag = document.createDocumentFragment();
@@ -577,12 +571,11 @@
       card.style.setProperty('--rc', colorOf(it));
       card.innerHTML = `
         <div class="thumb">
-          ${it.icon && !besideName ? `<img class="mini-icon" src="${it.icon}" alt="" loading="lazy">` : ''}
           ${it.img ? `<img class="art" src="${it.img}" alt="" loading="lazy">` : '<span class="no-img">no image yet</span>'}
         </div>
         <div class="card-body">
           <div class="name-row">
-            ${it.icon && besideName ? `<img class="name-icon" src="${it.icon}" alt="" loading="lazy">` : ''}
+            ${it.icon ? `<img class="name-icon" src="${it.icon}" alt="" loading="lazy">` : ''}
             <p class="item-name">${escapeHtml(it.name || '(unnamed)')}</p>
           </div>
           <div class="card-foot">
